@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import { Moon, Sun } from "lucide-react"
+import { Moon, Sun, User } from "lucide-react"
 import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { SignInButton } from '@clerk/nextjs'
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs'
 
 
 
@@ -25,9 +25,9 @@ const Navbar = () => {
             <li>Services</li>
         </ul>
         <div className='flex gap-2 justify-center items-center'>
-            <Button variant={"default"}>
-                <SignInButton/>
-            </Button>
+
+        
+            
         <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="icon">
@@ -48,6 +48,12 @@ const Navbar = () => {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    <SignedOut>
+          <SignInButton />
+    </SignedOut>
+        <SignedIn>
+          <UserButton />
+        </SignedIn>
         </div>
     </nav>
   )
