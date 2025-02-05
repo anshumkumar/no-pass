@@ -5,6 +5,44 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+
+
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+
+export const formSchema = z.object({
+  cardNumber: z.string()
+    .min(16, { message: "Card number must be at least 16 digits" })
+    .max(19, { message: "Card number cannot exceed 19 digits" })
+    .regex(/^[0-9\s-]+$/, { message: "Card number can only contain numbers, spaces, or dashes" }),
+  
+  cardName: z.string()
+    .min(2, { message: "Name must be at least 2 characters" })
+    .max(50, { message: "Name cannot exceed 50 characters" })
+    .regex(/^[a-zA-Z\s]+$/, { message: "Name can only contain letters and spaces" }),
+  
+  expiryDate: z.string()
+    .regex(/^(0[1-9]|1[0-2])\/([0-9]{2})$/, { 
+      message: "Expiry date must be in MM/YY format" 
+    }),
+  
+  cvv: z.string()
+    .min(3, { message: "CVV must be at least 3 digits" })
+    .max(4, { message: "CVV cannot exceed 4 digits" })
+    .regex(/^[0-9]+$/, { message: "CVV can only contain numbers" })
+})
+
+export type CardFormValues = z.infer<typeof cardFormSchema>
 
 export function AddCard() {
   const [cardNumber, setCardNumber] = useState("")
@@ -12,11 +50,20 @@ export function AddCard() {
   const [expiryDate, setExpiryDate] = useState("")
   const [cvv, setCvv] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Handle form submission logic here
-    console.log("Card added:", { cardNumber, cardName, expiryDate, cvv })
+    // 1. Define your form.
+    const form = useForm<z.infer<typeof formSchema>>({
+      resolver: zodResolver(formSchema),
+    })
+
+  // 2. Define a submit handler.
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    // Do something with the form values.
+    // ✅ This will be type-safe and validated.
+    console.log(values)
   }
+}
+
+
 
   return (
     <Card>
@@ -24,6 +71,30 @@ export function AddCard() {
         <CardTitle>Add New Card</CardTitle>
       </CardHeader>
       <CardContent>
+
+      <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="cardNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Card Number</FormLabel>
+              <FormControl>
+                <Input placeholder="shadcn" {...field} />
+              </FormControl>
+              <FormDescription>
+                This is your card number.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit">Submit</Button>
+      </form>
+    </Form>
+
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="cardNumber">Card Number</Label>
@@ -45,7 +116,7 @@ export function AddCard() {
               required
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div>
             <div className="space-y-2">
               <Label htmlFor="expiryDate">Expiry Date</Label>
               <Input

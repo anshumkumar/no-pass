@@ -2,6 +2,12 @@ import { AddCard } from "@/components/AddCard"
 import { AddPassword } from "@/components/AddPassword"
 import { YourCards } from "@/components/YourCards"
 import { YourPasswords } from "@/components/YourPasswords"
+import { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: 'NoPass - Home',
+  description: 'This is the homepage of my password manager app.',
+}
 
 export default function Home() {
   return (
