@@ -1,15 +1,19 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 
-
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { useUser } from "@clerk/nextjs"
 import {
   Form,
   FormControl,
@@ -19,51 +23,60 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import { addCardServer } from "@/app/actions"
 
+
+// Define the schema using Zod
 export const formSchema = z.object({
-  cardNumber: z.string()
+  cardNumber: z
+    .string()
     .min(16, { message: "Card number must be at least 16 digits" })
     .max(19, { message: "Card number cannot exceed 19 digits" })
-    .regex(/^[0-9\s-]+$/, { message: "Card number can only contain numbers, spaces, or dashes" }),
-  
-  cardName: z.string()
+    .regex(/^[0-9\s-]+$/, {
+      message: "Card number can only contain numbers, spaces, or dashes",
+    }),
+  cardName: z
+    .string()
     .min(2, { message: "Name must be at least 2 characters" })
     .max(50, { message: "Name cannot exceed 50 characters" })
-    .regex(/^[a-zA-Z\s]+$/, { message: "Name can only contain letters and spaces" }),
-  
-  expiryDate: z.string()
-    .regex(/^(0[1-9]|1[0-2])\/([0-9]{2})$/, { 
-      message: "Expiry date must be in MM/YY format" 
+    .regex(/^[a-zA-Z\s]+$/, {
+      message: "Name can only contain letters and spaces",
     }),
-  
-  cvv: z.string()
+  expiryDate: z
+    .string()
+    .regex(/^(0[1-9]|1[0-2])\/([0-9]{2})$/, {
+      message: "Expiry date must be in MM/YY format",
+    }),
+  cvv: z
+    .string()
     .min(3, { message: "CVV must be at least 3 digits" })
     .max(4, { message: "CVV cannot exceed 4 digits" })
-    .regex(/^[0-9]+$/, { message: "CVV can only contain numbers" })
+    .regex(/^[0-9]+$/, { message: "CVV can only contain numbers" }),
 })
 
-export type CardFormValues = z.infer<typeof cardFormSchema>
+export type CardFormValues = z.infer<typeof formSchema>
 
 export function AddCard() {
-  const [cardNumber, setCardNumber] = useState("")
-  const [cardName, setCardName] = useState("")
-  const [expiryDate, setExpiryDate] = useState("")
-  const [cvv, setCvv] = useState("")
 
-    // 1. Define your form.
-    const form = useForm<z.infer<typeof formSchema>>({
-      resolver: zodResolver(formSchema),
-    })
+  const user = useUser()
+  // Initialize the form with react-hook-form and zodResolver
+  const form = useForm<CardFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      cardNumber: "",
+      cardName: "",
+      expiryDate: "",
+      cvv: "",
+    },
+  })
 
-  // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
+  // Submit handler for the form
+  function onSubmit(values: CardFormValues) {
     console.log(values)
+    if (user.user){
+    addCardServer(Number(values.cardNumber), values.expiryDate, Number(values.cvv), values.cardName, user.user.id)
+    }
   }
-}
-
-
 
   return (
     <Card>
@@ -71,75 +84,80 @@ export function AddCard() {
         <CardTitle>Add New Card</CardTitle>
       </CardHeader>
       <CardContent>
-
-      <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="cardNumber"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Card Number</FormLabel>
-              <FormControl>
-                <Input placeholder="shadcn" {...field} />
-              </FormControl>
-              <FormDescription>
-                This is your card number.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit">Submit</Button>
-      </form>
-    </Form>
-
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="cardNumber">Card Number</Label>
-            <Input
-              id="cardNumber"
-              placeholder="1234 5678 9012 3456"
-              value={cardNumber}
-              onChange={(e) => setCardNumber(e.target.value)}
-              required
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="cardNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Card Number</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="1234 5678 9012 3456"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Enter your card number.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cardName">Name on Card</Label>
-            <Input
-              id="cardName"
-              placeholder="John Doe"
-              value={cardName}
-              onChange={(e) => setCardName(e.target.value)}
-              required
+
+            <FormField
+              control={form.control}
+              name="cardName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name on Card</FormLabel>
+                  <FormControl>
+                    <Input placeholder="John Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div>
-            <div className="space-y-2">
-              <Label htmlFor="expiryDate">Expiry Date</Label>
-              <Input
-                id="expiryDate"
-                placeholder="MM/YY"
-                value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cvv">CVV</Label>
-              <Input id="cvv" placeholder="123" value={cvv} onChange={(e) => setCvv(e.target.value)} required />
-            </div>
-          </div>
-        </form>
+
+            <FormField
+              control={form.control}
+              name="expiryDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Expiry Date</FormLabel>
+                  <FormControl>
+                    <Input placeholder="MM/YY" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="cvv"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>CVV</FormLabel>
+                  <FormControl>
+                    <Input placeholder="123" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button type="submit">Submit</Button>
+          </form>
+        </Form>
       </CardContent>
+      {/* If you prefer to have the submit button in the footer, you can move it there. */}
       <CardFooter>
-        <Button type="submit" className="w-full">
+        <Button onClick={form.handleSubmit(onSubmit)} className="w-full">
           Add Card
         </Button>
       </CardFooter>
     </Card>
   )
 }
-
